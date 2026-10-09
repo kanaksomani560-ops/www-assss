@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"/>
+<title>Kick Chat Panel Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --primary: #ff3030;
+    --accent: #00a8ff;
+    --red: #ff3030;
+    --blue: #00a8ff;
+    --yellow: #f0a500;
+    --green: #ff3030;
+    --bg:#080808;--bg2:#0f0f0f;--bg3:#161616;--bg4:#1e1e1e;
+    --border:#2a2a2a;--text:#e8e8e8;--muted:#aaa;
+    --mono:'JetBrains Mono',monospace;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;width:100%;}
+  body{background:radial-gradient(circle at top left, rgba(255,48,48,0.14), transparent 260px), radial-gradient(circle at top right, rgba(0,168,255,0.14), transparent 260px), linear-gradient(180deg, #050505 0%, #0c0c0c 100%);color:var(--text);font-family:var(--mono);font-size:13px;font-weight:600;display:flex;flex-direction:column;padding-top:var(--safe-top);padding-bottom:var(--safe-bottom);}
+  
+  header{display:flex;align-items:center;gap:16px;padding:18px 16px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(10,10,10,0.85);backdrop-filter:blur(12px);flex-wrap:wrap;}
+  .logo{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;color:var(--primary);}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--primary);box-shadow:0 0 16px rgba(255,48,48,0.45);animation:pulse 1.8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  .version{margin-left:auto;font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .sidebar-toggle{display:none;background:none;border:1px solid rgba(255,255,255,0.2);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:14px;}
+
+  .layout{display:grid;grid-template-columns:1fr;grid-gap:16px;flex:1;overflow:hidden;padding:12px;height:calc(100vh - var(--safe-top) - var(--safe-bottom));}
+  
+  @media (min-width: 768px) {
+    .layout{grid-template-columns:300px 1fr;grid-gap:18px;padding:16px 20px;}
+  }
+  
+  @media (min-width: 1024px) {
+    .layout{grid-template-columns:300px 1fr 360px;}
+  }
+
+  .left-panel, .right-panel{display:none;}
+  
+  @media (min-width: 768px) {
+    .left-panel{display:flex;}
+  }
+  
+  @media (min-width: 1024px) {
+    .right-panel{display:flex;}
+  }
+
+  .left-panel.mobile-open, .right-panel.mobile-open{display:flex;}
+
+  .panel{border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;overflow-y:auto;background:rgba(10,10,10,0.35);border-radius:16px;max-height:100%;position:relative;}
+  
+  .panel-modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:999;}
+  .panel-modal-overlay.show{display:block;}
+  .panel-modal{position:fixed;top:var(--safe-top);left:0;width:100%;height:calc(100% - var(--safe-top) - var(--safe-bottom));background:var(--bg);z-index:1000;display:flex;flex-direction:column;border-radius:16px 16px 0 0;overflow:hidden;}
+  
+  @media (min-width: 768px) {
+    .panel-modal-overlay{display:none !important;}
+    .panel-modal{position:static;width:auto;height:auto;background:none;z-index:auto;}
+  }
+
+  .section{padding:16px 18px;border:1px solid rgba(255,255,255,0.08);background:rgba(12,12,12,0.85);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.18);margin-bottom:12px;}
+  .section-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#ccc;margin-bottom:10px;font-weight:700;}
+  input[type="text"],input[type="number"],textarea{background:rgba(20,20,20,0.95);border:1px solid rgba(255,255,255,0.08);color:var(--text);font-family:var(--mono);font-size:12px;padding:12px 12px;border-radius:12px;outline:none;width:100%;transition:all .2s ease;-webkit-appearance:none;appearance:none;}
+  input:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 3px #ff303020;transform:translateY(-1px);}
+  textarea{resize:none;line-height:1.6;}
+  .btn{border:none;cursor:pointer;font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;border-radius:12px;padding:12px 14px;transition:all .2s ease;white-space:nowrap;position:relative;overflow:hidden;box-shadow:0 8px 16px rgba(0,0,0,0.16);min-height:42px;-webkit-appearance:none;appearance:none;}
+  .btn::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;border-radius:50%;background:rgba(255,255,255,0.16);transform:translate(-50%,-50%);transition:width .3s,height .3s;}
+  .btn:active::before{width:300px;height:300px;}
+  .btn-green{background:var(--primary);color:#fff;}.btn-green:hover{background:#ff4d4d;transform:translateY(-2px);box-shadow:0 4px 12px #ff303040;}
+  .btn-blue{background:var(--blue);color:#fff;}.btn-blue:hover{background:#20b8ff;transform:translateY(-2px);box-shadow:0 4px 12px #00a8ff40;}
+  .btn-dark{background:var(--bg4);color:var(--text);border:1px solid var(--border);}.btn-dark:hover{background:#2a2a2a;transform:translateY(-1px);}
+  .btn-full{width:100%;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none !important;}
+  .btn.active{background:var(--primary);color:#fff;}
+  .input-row{display:flex;gap:8px;flex-wrap:wrap;}
+  .hidden{visibility:hidden !important;opacity:0 !important;pointer-events:none !important;}
+  .sline{margin-top:6px;font-size:10px;color:var(--muted);}
+  .sline.ok{color:var(--green);}.sline.err{color:var(--red);}.sline.warn{color:var(--yellow);}
+
+  /* ACCOUNTS */
+  .accounts-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+  .accounts-header{padding:12px 16px;background:rgba(10,10,10,0.9);border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .accounts-search{flex:1 1 100%;max-width:100%;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,255,255,0.08);background:rgba(20,20,20,0.95);color:var(--text);font-family:var(--mono);font-size:12px;outline:none;-webkit-appearance:none;appearance:none;}
+  .accounts-search::placeholder{color:var(--muted);}
+  .accounts-list{flex:1;overflow-y:auto;background:rgba(0,0,0,0.08);}
+  .acc-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;transition:transform .15s ease, background-color .15s ease, border-color .15s ease;display:flex;align-items:center;gap:8px;background-color:rgba(255,255,255,0.02);will-change:transform, background-color;flex-wrap:wrap;}
+  .acc-item:active{transform:translateX(2px);background-color:rgba(255,255,255,0.08);}
+  @media (hover: hover) {
+    .acc-item:hover{transform:translateX(1px);background-color:rgba(255,255,255,0.05);}
+  }
+  .acc-item.selected{background-color:rgba(255,48,48,0.12);border-left:3px solid var(--primary);}
+  .accounts-title{font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--accent);}
+  .acc-num{color:var(--muted);font-size:10px;width:20px;}
+  .acc-name{color:var(--accent);font-weight:500;flex:1;font-size:11px;min-width:100px;}
+  .acc-name.dead{color:var(--red);}
+  .acc-follow-btn{border:none;background:rgba(0,168,255,0.12);color:var(--accent);border-radius:8px;cursor:pointer;padding:6px 10px;font-size:10px;}
+  .acc-badge{font-size:8px;padding:2px 5px;border-radius:3px;}
+  .acc-badge.ok{background:#0d1a2d;color:var(--accent);}
+  .acc-badge.err{background:#2a0808;color:var(--red);}
+  .empty-msg{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;color:var(--muted);padding:16px;}
+  .empty-msg .big{font-family:'Bebas Neue';font-size:28px;color:#1a1a1a;letter-spacing:3px;}
+
+  /* SELECTION & FOLLOW */
+  .selection-bar{padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:center;font-size:10px;flex-wrap:wrap;}
+  .clickable-link{color:var(--accent);cursor:pointer;text-decoration:underline;}.clickable-link:hover{color:var(--primary);}
+
+  /* CHAT */
+  .chat-panel{display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,0.12);background:linear-gradient(180deg, rgba(10,10,10,0.98) 0%, rgba(18,18,18,0.98) 100%);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,0.24);min-height:0;}
+  .chat-header{padding:16px 14px;border-bottom:1px solid rgba(255,255,255,0.12);background:linear-gradient(180deg, rgba(24,24,24,0.98) 0%, rgba(14,14,14,0.95) 100%);display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .chat-header > div:first-child{display:flex;flex-direction:column;gap:4px;flex:1;}
+  .chat-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:#fff;text-shadow:0 0 8px rgba(110, 0, 0, 0.568);}
+  .chat-subtitle{font-size:10px;color:var(--muted);line-height:1.4;}
+  .chat-as{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,168,255,0.1);border-radius:999px;border:1px solid rgba(0,168,255,0.18);white-space:nowrap;}
+  .chat-as .name{color:var(--accent);font-weight:700;}
+  .chat-body{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;background:rgba(255,255,255,0.02);}
+  #kickChatFrame{width:100%;flex:1;border:none;background:#111;border-bottom-left-radius:16px;border-bottom-right-radius:16px;}
+  .chat-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);padding:16px;background:rgba(255,255,255,0.03);border-radius:14px;margin:12px;outline:1px dashed rgba(255,255,255,0.08);}
+  .chat-empty .big{font-family:'Bebas Neue';font-size:28px;color:#e0e0e0;letter-spacing:2px;}
+  
+  /* ENHANCED CHAT INPUT */
+  .chat-input-wrap{border-top:1px solid rgba(255,255,255,0.12);padding:16px 14px;background:rgba(12,12,12,0.96);display:flex;flex-direction:column;gap:12px;}
+  .chat-input-wrap .section-title{margin-bottom:6px;}
+  .chat-input-wrap .add-template-row{gap:8px;}
+  .chat-input-wrap input[type="text"]#messageInput{padding:14px 14px;font-size:13px;border-radius:14px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);}
+  .chat-input-wrap .input-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .chat-input-wrap .input-row button{flex-shrink:0;min-width:100px;font-size:11px;}
+  .chat-note{font-size:10px;color:var(--muted);line-height:1.5;padding:0 4px;}
+  .quick-templates{min-height:40px;align-items:center;}
+  .template-btn{border-radius:999px;padding:8px 12px;font-size:10px;background:rgba(0,168,255,0.08);border:1px solid rgba(0,168,255,0.15);color:#b8ecff;-webkit-appearance:none;appearance:none;cursor:pointer;}
+  .quick-templates{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;max-height:100px;overflow-y:auto;}
+  .template-btn:active{background:rgba(0,168,255,0.16);border-color:rgba(0,168,255,0.28);transform:translateY(-1px);}
+  @media (hover: hover) {
+    .template-btn:hover{background:rgba(0,168,255,0.16);border-color:rgba(0,168,255,0.28);transform:translateY(-1px);}
+  }
+  .template-btn .x{margin-left:4px;color:var(--muted);font-size:8px;}
+  .template-btn:active .x{color:var(--red);}
+  @media (hover: hover) {
+    .template-btn:hover .x{color:var(--red);}
+  }
+  .add-template-row{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;}
+  .ai-preset-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(0,168,255,0.08);border:1px solid rgba(0,168,255,0.18);border-radius:999px;color:#b8ecff;font-size:10px;cursor:pointer;-webkit-appearance:none;appearance:none;}
+  .ai-preset-chip:active{background:rgba(0,168,255,0.16);}
+  @media (hover: hover) {
+    .ai-preset-chip:hover{background:rgba(0,168,255,0.16);}
+  }
+  .ai-preview-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;flex-wrap:wrap;}
+  .ai-preview-row.selected{background:rgba(0,168,255,0.12);}
+  .ai-preview-row:active{background:rgba(255,255,255,0.08);}
+  @media (hover: hover) {
+    .ai-preview-row:hover{background:rgba(255,255,255,0.05);}
+  }
+
+  /* WORD BANK */
+  .word-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:28px;max-height:180px;overflow-y:auto;}
+  .word-tag{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);color:var(--accent);font-size:10px;padding:6px 10px;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s ease;will-change:transform,background;-webkit-appearance:none;appearance:none;}
+  .word-tag.selected{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 10px rgba(0,168,255,0.4);}
+  .word-tag.selected .x{color:rgba(255,255,255,0.7);}
+  .word-tag:active{border-color:var(--primary);transform:translateY(-1px);box-shadow:0 2px 6px rgba(255,48,48,0.2);}
+  @media (hover: hover) {
+    .word-tag:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:0 4px 8px rgba(255,48,48,0.2);}
+  }
+  .word-tag .x{color:var(--muted);font-size:9px;}
+  .word-tag:active .x{color:var(--red);}
+  @media (hover: hover) {
+    .word-tag:hover .x{color:var(--red);}
+  }
+  .selection-controls{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+  .result-row{font-size:9px;padding:4px 0;border-bottom:1px solid #111;display:flex;gap:8px;flex-wrap:wrap;}
+  .r-acc{color:var(--muted);width:auto;flex-shrink:0;font-size:8px;}
+  .r-msg{color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .r-ok{color:var(--accent);font-weight:700;}
+  .r-err{color:var(--red);}
+
+  /* MOBILE PANEL HEADER */
+  .panel-close{display:none;position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text);cursor:pointer;font-size:20px;z-index:10;}
+  @media (max-width: 767px) {
+    .panel-close{display:block;}
+  }
+
+  .scrollable-section{max-height:60vh;overflow-y:auto;}
+  
+  @media (max-width: 767px) {
+    .sidebar-toggle{display:block;}
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="logo">◆ KICK PANEL</div>
+    <div class="dot"></div>
+    <span class="version">v2.0</span>
+    <button class="sidebar-toggle" id="toggleLeft" onclick="toggleLeftPanel()">☰ TOKENS</button>
+    <button class="sidebar-toggle" id="toggleRight" onclick="toggleRightPanel()">⚙ SETTINGS</button>
+  </header>
+
+  <div class="layout">
+    <div class="panel-modal-overlay" id="leftOverlay" onclick="closeLeftPanel()"></div>
+    <div class="panel-modal" id="leftModal">
+      <button class="panel-close" onclick="closeLeftPanel()">✕</button>
+      <div class="left-panel panel">
+        <div class="section scrollable-section">
+          <div class="section-title">Connect Channel</div>
+          <input type="text" id="channelInput" placeholder="channel name or URL" />
+          <button class="btn btn-blue btn-full" style="margin-top:8px;" onclick="connectChannel()">Connect</button>
+          <div class="sline" id="channelStatus"></div>
+        </div>
+        
+        <div class="section scrollable-section">
+          <div class="section-title">Load Tokens</div>
+          <textarea id="tokenInput" placeholder="paste tokens (one per line)" rows="6"></textarea>
+          <div class="input-row" style="margin-top:8px;">
+            <button class="btn btn-dark" onclick="loadTokensFromFile()">From File</button>
+            <button class="btn btn-blue" onclick="saveTokens()">Save</button>
+          </div>
+          <div class="sline" id="tokenStatus"></div>
+        </div>
+
+        <div class="section scrollable-section">
+          <div class="accounts-wrap">
+            <div class="accounts-header">
+              <div class="accounts-title">ACCOUNTS</div>
+              <button class="btn btn-dark" style="font-size:10px;padding:6px 8px;" onclick="clearSelection()">Clear</button>
+            </div>
+            <input type="text" class="accounts-search" id="accountSearch" placeholder="search..." onkeyup="filterAccounts()" />
+            <div class="accounts-list" id="accountsList">
+              <div class="empty-msg"><div class="big">∅</div>No accounts loaded</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div class="chat-header">
+        <div>
+          <div class="chat-title" id="chatTitle">KICK CHAT</div>
+          <div class="chat-subtitle" id="chatSubtitle">Select a channel to begin</div>
+        </div>
+        <div class="chat-as" id="chatAs" style="display:none;">
+          as <span class="name" id="chatAsName">—</span>
+        </div>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="chat-empty">
+          <div class="big">〰</div>
+          Ready to chat
+        </div>
+      </div>
+      <div class="chat-input-wrap">
+        <div class="section-title">Quick Templates</div>
+        <div class="quick-templates" id="quickTemplates"></div>
+        <div class="input-row" style="margin-bottom:12px;">
+          <input type="text" id="templateInput" placeholder="add emote/template..." style="flex:1;font-size:12px;"/>
+          <button class="btn btn-blue" style="font-size:11px;min-width:auto;padding:12px 10px;" onclick="addTemplate()">+</button>
+        </div>
+
+        <div class="section-title">Message</div>
+        <input type="text" id="messageInput" placeholder="type message here..." />
+        <div class="input-row">
+          <button class="btn btn-green btn-full" onclick="sendOne()">Send</button>
+          <button class="btn btn-blue" onclick="sendAll([document.getElementById('messageInput').value])">Rapid</button>
+        </div>
+        <div class="sline" id="sendStatus"></div>
+      </div>
+    </div>
+
+    <div class="panel-modal-overlay" id="rightOverlay" onclick="closeRightPanel()"></div>
+    <div class="panel-modal" id="rightModal">
+      <button class="panel-close" onclick="closeRightPanel()">✕</button>
+      <div class="right-panel panel">
+        <div class="section scrollable-section">
+          <div class="section-title">Word Bank</div>
+          <input type="text" id="wordInput" placeholder="add word..." />
+          <div class="input-row" style="margin-top:8px;">
+            <button class="btn btn-blue" style="flex:1;" onclick="addWord()">Add</button>
+            <button class="btn btn-dark" style="flex:1;" onclick="importWordBankFile()">Import TXT</button>
+          </div>
+          <div class="word-tags" id="wordTags"></div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+            <button class="btn btn-dark" id="wbModeRandom" onclick="setWordBankMode('random')" style="flex:1;font-size:10px;">Random</button>
+            <button class="btn btn-dark" id="wbModeUnique" onclick="setWordBankMode('unique')" style="flex:1;font-size:10px;">Unique</button>
+          </div>
+          <div class="selection-controls">
+            <button class="btn btn-dark" style="font-size:10px;" onclick="clearWordBank()">Clear</button>
+            <button class="btn btn-dark" style="font-size:10px;" onclick="selectAllWords()">All</button>
+          </div>
+        </div>
+
+        <div class="section scrollable-section">
+          <div class="section-title">Send Mode</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <button class="btn btn-dark" id="modeSelected" onclick="setSendMode('selected')" style="flex:1;font-size:11px;">Selected Only</button>
+            <button class="btn btn-dark" id="modeRandom" onclick="setSendMode('random')" style="flex:1;font-size:11px;">Random Acc</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="checkbox" id="rateLimit" checked /> Rate Limit (500ms)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input type="checkbox" id="randomShuffle" /> Random Order
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;">
+            <input type="checkbox" id="loopSend" /> Loop Send
+          </label>
+          <div class="sline" id="sendOptionStatus" style="margin-top:10px;"></div>
+        </div>
+
+        <div class="section scrollable-section">
+          <div class="section-title">Batch Actions</div>
+          <button class="btn btn-full btn-green" style="margin-bottom:8px;" onclick="multiSend()">Multi-Send</button>
+          <button class="btn btn-full btn-blue" onclick="sendRapid()">Rapid Spam</button>
+        </div>
+
+        <div class="section scrollable-section">
+          <div class="section-title">Follow Actions</div>
+          <button class="btn btn-full btn-blue" style="margin-bottom:8px;" onclick="massFollow()">Mass Follow</button>
+          <button class="btn btn-full btn-dark" onclick="checkFollows()">Check Follows</button>
+          <div class="sline" id="followStatus"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+const API = window.location.origin;
+let channelName = '';
+let chatroomId = null;
+let selectedAccounts = new Set();
+let allAccounts = [];
+let wordBank = new Set();
+let sendMode = 'selected';
+let accountMode = 'selected';
+let wordBankMode = 'unique';
+let quickTemplates = new Set();
+
+async function connectChannel(){const input=document.getElementById('channelInput');const channel=input.value.trim();if(!channel)return;const st=document.getElementById('channelStatus');st.textContent='Connecting...';st.className='sline';try{const r=await fetch(`${API}/api/connect`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channel:channel})});const d=await r.json();if(d.ok){channelName=d.channel;chatroomId=d.chatroom_id;document.getElementById('chatTitle').textContent=`#${channelName}`.toUpperCase();document.getElementById('chatSubtitle').textContent=`Connected (ID: ${chatroomId})`;st.textContent='✓ Connected';st.className='sline ok';}else{st.textContent=`✗ ${d.error}`;st.className='sline err';}}catch(e){st.textContent=`✗ ${e.message}`;st.className='sline err';}}
+
+async function loadTokensFromFile(){const input=document.createElement('input');input.type='file';input.accept='.txt';input.onchange=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(e)=>{document.getElementById('tokenInput').value=e.target.result;};reader.readAsText(file);};input.click();}
+
+async function saveTokens(){const text=document.getElementById('tokenInput').value.trim();const tokens=text.split('\n').map(t=>t.trim()).filter(t=>t);const st=document.getElementById('tokenStatus');st.textContent='Saving...';st.className='sline';try{const r=await fetch(`${API}/api/tokens/save`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tokens:tokens})});const d=await r.json();if(d.ok){loadAndDisplayAccounts();st.textContent=`✓ Saved ${d.saved} tokens`;st.className='sline ok';}else{st.textContent=`✗ ${d.error}`;st.className='sline err';}}catch(e){st.textContent=`✗ ${e.message}`;st.className='sline err';}}
+
+async function loadAndDisplayAccounts(){try{const r=await fetch(`${API}/api/tokens/load`);const d=await r.json();if(d.ok){allAccounts=d.tokens;renderAccounts();}}catch(e){console.error(e);}}
+
+function renderAccounts(){const list=document.getElementById('accountsList');if(allAccounts.length===0){list.innerHTML='<div class="empty-msg"><div class="big">∅</div>No accounts</div>';return;}list.innerHTML='';for(let i=0;i<allAccounts.length;i++){const acc=allAccounts[i];const item=document.createElement('div');item.className='acc-item'+(selectedAccounts.has(i)?' selected':'');item.innerHTML=`<span class="acc-num">#${i+1}</span><span class="acc-name">${acc.substring(0,20)}</span>`;item.onclick=()=>{if(selectedAccounts.has(i)){selectedAccounts.delete(i);}else{selectedAccounts.add(i);}renderAccounts();};list.appendChild(item);}}
+
+function filterAccounts(){const query=document.getElementById('accountSearch').value.toLowerCase();const items=document.querySelectorAll('.acc-item');items.forEach(item=>{const name=item.querySelector('.acc-name').textContent.toLowerCase();item.style.display=name.includes(query)?'flex':'none';});}
+
+function clearSelection(){selectedAccounts.clear();renderAccounts();}
+
+function addWord(){const input=document.getElementById('wordInput');const word=input.value.trim();if(!word)return;wordBank.add(word);input.value='';renderWordBank();}
+
+function importWordBankFile(){const input=document.createElement('input');input.type='file';input.accept='.txt';input.onchange=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=(e)=>{const text=e.target.result;const words=text.split(/[\n\r]+/).map(w=>w.trim()).filter(w=>w);let added=0;words.forEach(word=>{if(!wordBank.has(word)){wordBank.add(word);added++;}});renderWordBank();alert(`✓ Imported ${added} words from ${file.name}`);};reader.readAsText(file);};input.click();}
+
+function renderWordBank(){const container=document.getElementById('wordTags');container.innerHTML='';wordBank.forEach(word=>{const tag=document.createElement('button');tag.className='word-tag';tag.innerHTML=word+'<span class="x">×</span>';tag.onclick=()=>{wordBank.delete(word);renderWordBank();};container.appendChild(tag);});}
+
+function clearWordBank(){wordBank.clear();renderWordBank();}
+
+function selectAllWords(){document.querySelectorAll('.word-tag').forEach(tag=>tag.classList.add('selected'));}
+
+async function sendOne(){if(!chatroomId||!document.getElementById('messageInput').value)return;const msg=document.getElementById('messageInput').value;const tokens=getAccountsForSend();if(!tokens.length){document.getElementById('sendStatus').textContent='✗ No account selected';document.getElementById('sendStatus').className='sline err';return;}const st=document.getElementById('sendStatus');st.textContent='Sending...';st.className='sline';try{const r=await fetch(`${API}/api/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chatroom_id:chatroomId,message:msg,token:tokens[0],channel:channelName})});const d=await r.json();if(d.ok){st.textContent='✓ Sent';st.className='sline ok';}else{st.textContent=`✗ ${d.error}`;st.className='sline err';}}catch(e){st.textContent=`✗ ${e.message}`;st.className='sline err';}}
+
+async function sendAll(words){if(!chatroomId||words.length===0)return;const tokens=getAccountsForSend();if(!tokens.length){document.getElementById('sendStatus').textContent='✗ No accounts available';document.getElementById('sendStatus').className='sline err';return;}const st=document.getElementById('sendStatus');st.textContent=`Sending to ${tokens.length} accounts...`;st.className='sline';const delay=document.getElementById('rateLimit').checked?500:0;for(let i=0;i<tokens.length;i++){if(i>0&&delay>0)await new Promise(r=>setTimeout(r,delay));const word=words[Math.floor(Math.random()*words.length)];try{await fetch(`${API}/api/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chatroom_id:chatroomId,message:word,token:tokens[i],channel:channelName})});}catch(e){}}st.textContent=`✓ Sent ${tokens.length} messages`;st.className='sline ok';}
+
+async function multiSend(){const words=Array.from(wordBank);if(!words.length){document.getElementById('sendStatus').textContent='✗ Word bank is empty';document.getElementById('sendStatus').className='sline err';return;}const tokens=getAccountsForSend();if(!tokens.length){document.getElementById('sendStatus').textContent='✗ No accounts available';document.getElementById('sendStatus').className='sline err';return;}const st=document.getElementById('sendStatus');st.textContent=`Sending to ${tokens.length} accounts...`;st.className='sline';const delay=document.getElementById('rateLimit').checked?500:0;let wordIndex=0;for(let i=0;i<tokens.length;i++){if(i>0&&delay>0)await new Promise(r=>setTimeout(r,delay));let word;if(wordBankMode==='unique'){word=words[wordIndex%words.length];wordIndex++;}else{word=words[Math.floor(Math.random()*words.length)];}try{await fetch(`${API}/api/send`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chatroom_id:chatroomId,message:word,token:tokens[i],channel:channelName})});}catch(e){}}st.textContent=`✓ Sent ${tokens.length} messages (${wordBankMode} mode)`;st.className='sline ok';}
+
+async function sendRapid(){const msg=document.getElementById('messageInput').value;const words=msg.split(/[\s,]+/).filter(w=>w);await sendAll(words.length>0?words:[msg]);}
+
+async function massFollow(){const tokens=accountMode==='selected'?Array.from(selectedAccounts).map(i=>allAccounts[i]):allAccounts;if(!tokens.length){document.getElementById('followStatus').textContent='✗ No accounts available';document.getElementById('followStatus').className='sline err';return;}const st=document.getElementById('followStatus');st.textContent='Following...';st.className='sline';try{const r=await fetch(`${API}/api/mass_follow`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target_channel:channelName,tokens:tokens,delay_ms:2000})});const d=await r.json();if(d.ok){st.textContent=`✓ Followed: ${d.followed}`;st.className='sline ok';}else{st.textContent=`✗ ${d.error}`;st.className='sline err';}}catch(e){st.textContent=`✗ ${e.message}`;st.className='sline err';}}
+
+async function checkFollows(){const tokens=accountMode==='selected'?Array.from(selectedAccounts).map(i=>allAccounts[i]):allAccounts;if(!tokens.length){document.getElementById('followStatus').textContent='✗ No accounts available';document.getElementById('followStatus').className='sline err';return;}const st=document.getElementById('followStatus');st.textContent='Checking...';st.className='sline';try{const r=await fetch(`${API}/api/check_follows`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({target_id:chatroomId,tokens:tokens})});const d=await r.json();if(d.ok){const following=d.results.filter(x=>x.following).length;st.textContent=`✓ ${following}/${tokens.length} following`;st.className='sline ok';}else{st.textContent=`✗ ${d.error}`;st.className='sline err';}}catch(e){st.textContent=`✗ ${e.message}`;st.className='sline err';}}
+
+function setSendMode(mode){accountMode=mode;document.getElementById('modeSelected').className=mode==='selected'?'btn btn-blue':'btn btn-dark';document.getElementById('modeRandom').className=mode==='random'?'btn btn-blue':'btn btn-dark';}
+
+function setWordBankMode(mode){wordBankMode=mode;document.getElementById('wbModeRandom').className=mode==='random'?'btn btn-blue':'btn btn-dark';document.getElementById('wbModeUnique').className=mode==='unique'?'btn btn-blue':'btn btn-dark';}
+
+function addTemplate(){const input=document.getElementById('templateInput');const tmpl=input.value.trim();if(!tmpl)return;quickTemplates.add(tmpl);input.value='';renderTemplates();}
+
+function renderTemplates(){const container=document.getElementById('quickTemplates');container.innerHTML='';quickTemplates.forEach(tmpl=>{const btn=document.createElement('button');btn.className='template-btn';btn.innerHTML=tmpl+'<span class="x">×</span>';btn.onclick=(e)=>{if(e.target.classList.contains('x')){quickTemplates.delete(tmpl);renderTemplates();}else{document.getElementById('messageInput').value=tmpl;document.getElementById('messageInput').focus();}};container.appendChild(btn);});}
+
+function getAccountsForSend(){if(accountMode==='random'){return[allAccounts[Math.floor(Math.random()*allAccounts.length)]];}else{return Array.from(selectedAccounts).map(i=>allAccounts[i]);}}
+
+function toggleLeftPanel(){document.getElementById('leftOverlay').classList.toggle('show');document.getElementById('leftModal').classList.toggle('mobile-open');}
+
+function closeLeftPanel(){document.getElementById('leftOverlay').classList.remove('show');document.getElementById('leftModal').classList.remove('mobile-open');}
+
+function toggleRightPanel(){document.getElementById('rightOverlay').classList.toggle('show');document.getElementById('rightModal').classList.toggle('mobile-open');}
+
+function closeRightPanel(){document.getElementById('rightOverlay').classList.remove('show');document.getElementById('rightModal').classList.remove('mobile-open');}
+
+loadAndDisplayAccounts();setSendMode('selected');setWordBankMode('unique');renderTemplates();
+  </script>
+</body>
+</html>
